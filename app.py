@@ -10,6 +10,11 @@ from core.usuario.usuario_service import UsuarioService
 from core.login.login import Login
 from core.login.login_service import LoginService
 
+#importação do core categoria e categoriaservice
+from core.categoria.categoria import Categoria
+from core.categoria.categoria_service import CategoriaService
+
+
 app = Flask(__name__)
 app.secret_key = '1234567890abcdef'
 
@@ -208,15 +213,67 @@ def listreceita():
 @app.route('/categoria', methods=['GET', 'POST'])
 @login_requerido
 def categoria():
-    return render_template('categoria.html')
+    
+    service = CategoriaService()
 
-
+    if request.method == 'GET':
+        return render_template('categoria.html')
+    elif request.method == 'POST':
+        try:
+            nome_categoria = request.form['categoria-receita']
+            service.cadastrar_categoria(nome_categoria)
+            flash('Categoria cadastrada com sucesso!', 'sucess')
+        except ValueError as e:
+            flash(str(e), 'error')
+        return render_template('categoria.html')
+        
 # Rota para a página listcategoria
-@app.route('/listcategoria', methods=['GET', 'POST'])
+@app.route('/list_categoria', methods=['GET', 'POST'])
 @login_requerido
 def listcategoria():
-    return render_template('listcategoria.html')
+    service = CategoriaService()
+    try:
+        categorias = service.listar_categorias()
+    except Exception as e:
+        flash(str(e), 'error')
+        categorias = []
 
+    return render_template('list_categoria.html',categorias=categorias)
+
+# Rota para editar categoria
+@app.route('/editar_categoria/<nome_categoria>', methods=['GET', 'POST'])
+@login_requerido
+def editar_categoria(nome_categoria):
+    service = CategoriaService()
+    try:
+        categoria = service.buscar_por_nome(nome_categoria)
+    except ValueError:
+        flash('Categoria não encontrada', "error")
+        return redirect(url_for('listcategoria'))
+
+    if request.method == 'POST':
+        nova_categoria = request.form['categoria-receita']
+
+        try:
+            service.atualizar_categoria(nome_categoria, nova_categoria)
+            flash('Categoria atualizada com sucesso!', "sucess")
+            return redirect(url_for('listcategoria'))
+        except Exception as e:
+            flash(str(e), "error")
+            
+    return render_template('categoria.html', categoria = categoria)
+
+# Rota para excluir categoria
+@app.route('/excluir_categoria/<nome_categoria>')
+@login_requerido
+def excluir_categoria(nome_categoria):
+    service = CategoriaService()
+    try:
+        service.excluir_categoria(nome_categoria)
+        flash('Categoria excluida com sucesso!', 'sucess')
+    except ValueError:
+        flash('Categoria não excluida', 'error')
+    return redirect(url_for('listcategoria'))
 
 if __name__ == "__main__":
     app.run(debug=True)
