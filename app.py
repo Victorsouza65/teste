@@ -14,6 +14,9 @@ from core.login.login_service import LoginService
 from core.categoria.categoria import Categoria
 from core.categoria.categoria_service import CategoriaService
 
+#importação do core contato e contatoservice
+from core.contato.contato import contato
+from core.contato.contato_service import ContatoService
 
 app = Flask(__name__)
 app.secret_key = '1234567890abcdef'
@@ -192,7 +195,34 @@ def excluir_usuario(id):
 @app.route('/contato', methods=['GET', 'POST'])
 @login_requerido
 def contato():
-    return render_template('contato.html')
+    service = ContatoService()
+
+    if request.method == 'POST':
+        contato = Contato(
+            id = 1, 
+            facebook = request.form.get("facebook"),
+            rede_x = request.form.get("rede_x"),
+            instagram = request.form.get("instagram"),
+            linkedin = request.form.get("linkedin"),
+            github = request.form.get("github")
+        )
+        service.atualizar_ou_inserir(contato)
+        flash('Contatos atualizados com sucesso!', 'success')
+        return redirect(url_for('contato'))
+    
+    try:
+        contato = contato_service.obter_contato()
+    except ValueError:
+        contato = Contato(
+            id = 1, 
+            facebook = '',
+            rede_x = '',
+            instagram = '',
+            linkedin = '',
+            github = ''
+            )
+        
+    return render_template('contato.html', contato = contato)
 
 
 # Rota para a página receita
@@ -222,7 +252,7 @@ def categoria():
         try:
             nome_categoria = request.form['categoria-receita']
             service.cadastrar_categoria(nome_categoria)
-            flash('Categoria cadastrada com sucesso!', 'sucess')
+            flash('Categoria cadastrada com sucesso!', 'success')
         except ValueError as e:
             flash(str(e), 'error')
         return render_template('categoria.html')
@@ -256,7 +286,7 @@ def editar_categoria(nome_categoria):
 
         try:
             service.atualizar_categoria(nome_categoria, nova_categoria)
-            flash('Categoria atualizada com sucesso!', "sucess")
+            flash('Categoria atualizada com sucesso!', "success")
             return redirect(url_for('listcategoria'))
         except Exception as e:
             flash(str(e), "error")
@@ -270,7 +300,7 @@ def excluir_categoria(nome_categoria):
     service = CategoriaService()
     try:
         service.excluir_categoria(nome_categoria)
-        flash('Categoria excluida com sucesso!', 'sucess')
+        flash('Categoria excluida com sucesso!', 'success')
     except ValueError:
         flash('Categoria não excluida', 'error')
     return redirect(url_for('listcategoria'))
